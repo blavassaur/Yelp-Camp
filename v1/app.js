@@ -1,38 +1,82 @@
 var express     = require("express"),
     app         = express(),
     bodyParser  = require ("body-parser"),
-    mongoose    = require("mongoose");
+    mongoose    = require("mongoose")
 
-mongoose.connect("mongodb://127.0.0.1:27017/yelp_camp", { useNewUrlParser: true });
+mongoose.connect("mongodb://localhost:27017/yelp_camp", { useNewUrlParser: true });
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 
-var campgrounds = [
-    {name: "Camp Onowana", image:"https://pixabay.com/get/ea32b6062afc013ed1584d05fb1d4e97e07ee3d21cac104491f3c77ca1ecb2bb_340.jpg"},
-    {name: "Hogwarts Pass", image:"https://pixabay.com/get/eb3db30a29fd063ed1584d05fb1d4e97e07ee3d21cac104491f3c77ca1ecb2bb_340.jpg"},
-    {name: "Broken Rock", image:"https://farm4.staticflickr.com/3178/2386126905_4d131dbb11.jpg"},
-]
+// SCHEMA SETUP
+var campgroundSchema = new mongoose.Schema({
+    name: String,
+    image: String,
+    description: String
+});
+
+var Campground = mongoose.model("Campground", campgroundSchema);
+
+// Campground.create({
+//     name: "Camp Onowana",
+//     image: "https://images.unsplash.com/photo-1525209149972-1d3faa797c3c?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=053f91dd9aee1cc7bc5cafca28cb625c&auto=format&fit=crop&w=1050&q=80",
+//     description: "When I think about you, it makes me wanna fart."
+// }, function(err, campground){
+//     if (err){
+//         console.log(err);
+//     } else {
+//         console.log("NEW CAMPGROUND:");
+//         console.log(campground);
+//     }
+// });
 
 app.get("/", function(req, res){
     res.render("landing");
 });
 
 app.get("/campgrounds", function(req, res){
-    res.render("campgrounds", {campgrounds: campgrounds});
+    Campground.find({}, function(err, allCampgrounds){
+        if (err){
+            console.log(err);
+        } else {
+            res.render("index", {campgrounds: allCampgrounds});
+        }  
+    });
 });
 
 app.post("/campgrounds", function(req, res){
+    // get data from form and add to campgrounds array
     var name = req.body.name;
     var image = req.body.image;
-    var newCampground = {name: name, image: image};
-    campgrounds.push(newCampground);
-    res.redirect("/campgrounds");
+    var desc = req.body.description;
+    var newCampground = {name: name, image: image, description: desc};
+    // Create a new campground and save to DB
+    Campground.create(newCampground, function(err, newlyCreated){
+        if(err){
+            console.log(err);
+        } else {
+            //redirect back to campgrounds page
+            res.redirect("/campgrounds");
+        }
+    });
 });
 
 
 app.get("/campgrounds/new", function(req, res){
     res.render("new");
 });
+
+
+app.get("/campgrounds/:id", function(req, res){
+    //find the campground with provided ID
+    Campground.findById(req.params.id, function(err, foundCampground){
+        if(err){
+            console.log(err);
+        } else {
+            //render show template with that campground
+            res.render("show", {campground: foundCampground});
+        }
+    });
+})
 
 app.listen(3000, function(){
     console.log("Yelp Camp has started!");
