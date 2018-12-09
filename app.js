@@ -3,8 +3,8 @@ var express     = require("express"),
     bodyParser  = require ("body-parser"),
     mongoose    = require("mongoose"),
     Campground  = require("./models/campground"),
-    seedDB      = require("./seeds")
-    // Comment     = require("./models/comment"),
+    seedDB      = require("./seeds"),
+    Comment     = require("./models/comment")
     // Users       = require("./models/user")
 
 
@@ -12,35 +12,26 @@ var express     = require("express"),
 mongoose.connect("mongodb://localhost:27017/yelp_camp", { useNewUrlParser: true });
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
+app.use(express.static(__dirname + "/public"));
 seedDB();
 
-// Campground.create({
-//     name: "Camp Onowana",
-//     image: "https://images.unsplash.com/photo-1525209149972-1d3faa797c3c?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=053f91dd9aee1cc7bc5cafca28cb625c&auto=format&fit=crop&w=1050&q=80",
-//     description: "When I think about you, it makes me wanna fart."
-// }, function(err, campground){
-//     if (err){
-//         console.log(err);
-//     } else {
-//         console.log("NEW CAMPGROUND:");
-//         console.log(campground);
-//     }
-// });
-
+//INDEX
 app.get("/", function(req, res){
     res.render("landing");
 });
 
+//INDEX
 app.get("/campgrounds", function(req, res){
     Campground.find({}, function(err, allCampgrounds){
         if (err){
             console.log(err);
         } else {
-            res.render("index", {campgrounds: allCampgrounds});
+            res.render("campgrounds/index", {campgrounds: allCampgrounds});
         }  
     });
 });
 
+//CREATE
 app.post("/campgrounds", function(req, res){
     // get data from form and add to campgrounds array
     var name = req.body.name;
@@ -58,9 +49,9 @@ app.post("/campgrounds", function(req, res){
     });
 });
 
-
+//NEW 
 app.get("/campgrounds/new", function(req, res){
-    res.render("new");
+    res.render("campgrounds/new");
 });
 
 //SHOW
@@ -71,10 +62,45 @@ app.get("/campgrounds/:id", function(req, res){
             console.log(err);
         } else {
             //render show template with that campground
-            res.render("show", {campground: foundCampground});
+            res.render("campgrounds/show", {campground: foundCampground});
         }
     });
 })
+
+//==============
+//COMMENTS ROUTES
+//==============
+
+//NEW
+app.get("/campgrounds/:id/comments/new", function(req, res){
+    Campground.findById(req.params.id, function(err, campground){
+        if (err){
+            console.log(err);
+        } else {
+            res.render("comments/new", {campground: campground});
+        }
+    })
+});
+
+//CREATE
+app.post("/campgrounds/:id/comments", function(req, res){
+    Campground.findById(req.params.id, function(err, campground){
+        if (err){
+            console.log(err);
+            res.redirect("/campgrounds");
+        } else {
+            Comment.create(req.body.comment, function(err, comment){
+                if (err){
+                    console.log(err);
+                } else {
+                    campground.comments.push(comment);
+                    campground.save();
+                    res.redirect("/campgrounds/" + campground._id);
+                }
+            });
+        }
+    })
+});
 
 app.listen(3000, function(){
     console.log("Yelp Camp has started!");
