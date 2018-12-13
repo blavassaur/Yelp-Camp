@@ -1,11 +1,13 @@
-var express     = require("express"),
-    app         = express(),
-    bodyParser  = require ("body-parser"),
-    mongoose    = require("mongoose"),
-    Campground  = require("./models/campground"),
-    seedDB      = require("./seeds"),
-    Comment     = require("./models/comment")
-    // Users       = require("./models/user")
+var express         = require("express"),
+    app             = express(),
+    bodyParser      = require ("body-parser"),
+    mongoose        = require("mongoose"),
+    passport        = require("passport"),
+    LocalStrategy   = require("passport-local"),
+    Campground      = require("./models/campground"),
+    seedDB          = require("./seeds"),
+    Comment         = require("./models/comment"),
+    Users           = require("./models/user")
 
 
 
